@@ -1,0 +1,672 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<TITLE>acdc - "application core debug configutor" to configure your system for application core analysis</TITLE>
+
+<script type="text/javascript">
+// an XMLHttpRequest
+var xhr = null;
+var url = null;
+var resp = new Array();
+
+function system_details()
+{
+            document.getElementById("rhel").innerHTML = "probing..";
+            document.getElementById("arch").innerHTML = "probing..";
+    // instantiate XMLHttpRequest object
+    try
+    {
+        xhr = new XMLHttpRequest();
+    }
+    catch (e)
+    {
+        xhr = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+
+    // handle old browsers
+    if (xhr == null)
+    {
+        alert("Ajax not supported by your browser!");
+        return;
+    }
+
+    
+url = "php/system_details.php?Host_Passwd=" + document.getElementById("Host_Passwd").value + "&Host_IP=" + document.getElementById("Host_IP").value;
+// show progress
+document.getElementById("progress").style.display = "block";
+xhr.onreadystatechange = system_details_handler;
+xhr.open("GET",url,true);
+xhr.send(null);
+}
+
+
+function system_details_handler()
+{
+    // only handle loaded requests
+    if (xhr.readyState == 4)
+    {
+    // hide progress
+    document.getElementById("progress").style.display = "none";
+        if (xhr.status == 200)
+	{
+	    resp = xhr.responseText.split('<br>');
+		if (resp[0] == 255)
+		{
+            document.getElementById("rhel").innerHTML = "failed to probe";
+            document.getElementById("arch").innerHTML = "failed to probe";
+		alert("no connection to host");
+		return;
+		}
+
+		if (resp[0] == 5)
+		{
+            document.getElementById("rhel").innerHTML = "failed to probe";
+            document.getElementById("arch").innerHTML = "failed to probe";
+		alert("authentication failure");
+		return;
+		}
+
+		if (resp[0] == 0)
+		{
+//            document.getElementById("rhel").innerHTML = resp[1];
+	    var str = resp[1].split(" ");
+	    var str = str[6].split(".");
+            document.getElementById("rhel").innerHTML = str[0];
+            document.getElementById("arch").innerHTML = resp[2];
+	    return;
+		}
+	}
+        else
+            alert("Error with Ajax call!");
+    }
+}
+
+
+
+
+</script>
+
+<style type="text/css">
+   .more {
+      display: none; }
+</style>
+
+<style type="text/css">
+.visibleDiv, #NotifyMessage
+{
+    position: fixed;
+    display: block;
+    border: solid 1px #ffdab9;
+    vertical-align: middle;
+    background: #ffdab9;
+    text-align: center;
+    margin-left: 10px;
+}
+
+#NotifyMessage
+{
+    top: 10px;
+    left: 10px;
+}
+
+</style>
+
+</HEAD>
+
+<BODY>
+
+<marquee behavior="scroll" direction="left">
+<font size="4" face="arial" color="blue">
+This tool is under development...  please do report bugs/rfes for this! also suggest better name for it, current name under consideration is "acdc" i.e. application core debug configurator :-)
+</font>
+</marquee>
+    
+<div id="NotifyMessage">
+     Provide required details and hit "Proceed"
+</div>
+
+<h2> Welcome to acdc - application core debug configurator</h2>
+
+<p>
+<a href="#" id="about-show" class="showLink"
+onclick="showHide('about');return false;">About the tool</a>
+<div id="about" class="more">
+<p>
+This tool is designed for configuring your test system to analyze the application core received from customer. Just provide IP of the test system to be configured along with its root password and select the core file and installed-rpms (usually in extracted sosreport) from either fubar or gss-share (server side mounts presented here). The system will be configured to analyze core as per selected details. 
+
+<p>
+Backtrace captured from provided core will be stored in /root/acdc/[sfdc#]/ directory in your test system.
+</p>
+<br>
+NOTE: Use below command to capture installed-rpms if sosreport is not available.
+<br>
+/bin/rpm -qa --qf "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n" > /tmp/installed-rpms.out
+</p>
+<p><a href="#" id="about-hide" class="hideLink"
+onclick="showHide('about');return false;">Hide Details.</a></p>
+</div>
+
+<br>
+
+<!-- <form name="Form1" action="php/system_details.php" method="post"> -->
+
+<div id="Form1_div">
+<form name="Form1" onsubmit="system_details(); return false;">
+<table>
+	<tr>
+	<td>IP of test system:</td>
+	<td>
+	<input type="text" id="Host_IP" onblur="ValidateIPaddress()"/>
+	</td>
+	<td>root's password of test system:</td>
+	<td>
+	<input type="password" id="Host_Passwd" onkeyup="ValidatePasswd()"/>
+	</td>
+	<td><input type="submit" value="Submit" name="Host_Submit" disabled/></td>
+	</tr>
+	
+	<tr>
+	<td></td>
+	<td>
+	<p id="ipStatus">Please enter valid IP address  </p>
+	</td>
+	<td></td>
+	<td>
+	<p id="passwdStatus">Enter root password  </p>
+	</td>
+	<td></td>
+	</tr>
+
+	<tr>
+	<td colspan="5">
+	<b>
+	<font size="2" face="arial" color="blue">
+	The test system must already be registered on RHN or Satellaite and subscribed to required child channel (if any) and appropriate debuginfo channels.
+	</font>
+	<br>
+	<font size="2" face="arial" color="red">
+	CAUTION: The tool may make your system unusable! Make sure the test system being used here is not important for you.
+	</font>
+	</b>
+
+	</td>
+	</tr>
+
+	<tr>
+	<td colspan="2">
+	Test system's RHEL Version: <span id="rhel" style="background-color:yellow" >to be probed..</span>
+	<div id="progress" style="display: none;">
+	Connecting..
+	<br>
+        <img alt="Please wait.." title="Please wait.." src="progress.gif" />
+	</div>
+	</td>
+	<td colspan="2">
+	Test system's Architecture: <span id="arch" style="background-color:lightgreen" >to be probed..</span>
+	</td>
+	</tr>
+
+	<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+	<td></td>
+	<td></td>
+	</tr>
+</table>
+</form>
+</div>
+
+<div id="Form2_div">
+<form name="Form2">
+<table>
+
+
+        <tr>
+        <td colspan="5">
+	<p>File being selected should be available on fubar or gss-share
+	<a href="#" id="example-show" class="showLink" 
+	onclick="showHide('example');return false;">See details.</a>
+	</p>
+	<div id="example" class="more">
+	<p>
+	<b>fubar:</b> 
+	<br>
+	sshfs [USER]@fubar.gsslab.pnq.redhat.com:/fubar /home/[USER]/mnt/ 
+	<br>
+	(replace [USER] with appropriate kerberos ID)
+	<br>
+	<b>gss-share:</b> 
+	<br>
+	gss-share.pnq.redhat.com:/share/sysreports 
+	<br>
+	(nfs share)
+	</p>
+	<p><a href="#" id="example-hide" class="hideLink" 
+	onclick="showHide('example');return false;">Hide Details.</a></p>
+	</div>
+        </td>
+        </tr>
+
+
+	<tr>
+	<td>Select core from:</td>
+	<td>
+	<input type="radio" name="core_Path" value="/data/fubar/" checked="checked" onblur="Validate_core()"/>fubar <br>
+	<input type="radio" name="core_Path" value="/data/gss-share/" onblur="Validate_core()"/>gss-share
+	</td>
+	<td>in directory (sfdc number):</td>
+	<td><input type="text" id="sfdc_core" onblur="Validate_core_with_focus()"/></td>
+	<td><input type="button" value="Submit" id="core_Submit" disabled/></td>
+	</tr>
+
+	<tr>
+	<td colspan="4">
+	<span id="core_file_path" style="display: none;">none</span>
+	</td>
+	</tr>
+
+	<tr>
+	<td>
+        <div id="progress_with_core" style="display: none;">
+	Getting list of files..
+	<br>
+        <img alt="Please wait" title="Please wait" src="progress.gif" />
+	</div>
+	</td>
+	<td colspan="4">
+	<div id="fs_list_core"></div>
+	</td>
+	</tr>
+
+	<tr>
+	<td colspan="4">
+	<span id="core_file_selected" style="display: none;">none</span>
+	<br>
+	<span id="core_file_name" style="display: none;">none</span>
+	</td>
+	</tr>
+
+	<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+	<td></td>
+	<td></td>
+	</tr>
+
+
+        <tr>
+        <td>Select installed-rpms from:</td>
+        <td>
+        <input type="radio" name="rpms_Path" value="/data/fubar/" checked="checked" onblur="Validate_rpms()"/>fubar <br>
+        <input type="radio" name="rpms_Path" value="/data/gss-share/" onblur="Validate_rpms()"/>gss-share
+        </td>
+        <td>in directory (sfdc number):</td>
+        <td><input type="text" id="sfdc_rpms" onblur="Validate_rpms_with_focus()"/></td>
+        <td><input type="button" value="Submit" id="rpms_Submit" disabled/></td>
+        </tr>
+
+        <tr>
+        <td colspan="4">
+        <span id="rpms_file_path" style="display: none;">none</span>
+        </td>
+        </tr>
+
+        <tr>
+        <td>
+        <div id="progress_with_rpms" style="display: none;">
+	Getting list of files..
+	<br>
+        <img alt="Please wait" title="Please wait" src="progress.gif" />
+        </div>
+        </td>
+        <td colspan="4">
+        <div id="fs_list_rpms"></div>
+        </td>
+        </tr>
+
+        <tr>
+        <td colspan="4">
+        <span id="rpms_file_selected" style="display: none;">none</span>
+	<br>
+        <span id="rpms_file_name" style="display: none;">none</span>
+        </td>
+        </tr>
+
+        <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        </tr>
+
+
+
+</table>
+</Form>
+</div>
+
+<input type="button" id="proceed" value="Proceed"/>
+<br>
+
+
+<!--
+<table>
+-->
+<table id="table_selected_files" style="visibility: hidden">
+  <tr><th><b>Details of selected files</b></th><tr>
+  <tbody>
+    <tr>
+    <td>
+    Core binary: <span id="core_file_bin">none</span>
+    <br>
+    Core Architecture: <span id="core_file_arch" style="background-color:lightgreen" >none</span>
+    </td>
+    <td>
+    rpms rhel version: <span id="rpms_file_ver" style="background-color:yellow" >none</span>
+    <br>
+    rpms rhel Architecture: <span id="rpms_file_arch" style="background-color:lightgreen" >none</span>
+    </td>
+    </tr>
+</table>
+   <br>
+        <div id="progress_with_proceed" style="display: none;">
+	<span id="proceed_message">Generating dependency list, please wait..</span>
+	<br>
+        <img alt="Please wait" title="Please wait" src="progress.gif" />
+	</div>
+
+<!--
+    <tr>
+    <td>
+    <input type="checkbox" id="proceed_anyway" disabled onclick="proceed_anyway_clicked()" /> I know what I am doing, please proceed.. <br>
+    </td>
+    </tr>
+<table id="table_pkgs_status" border="1" >
+-->
+<table id="table_pkgs_status" border="1" style="visibility: hidden">
+    <tr><th colspan=3><b>Status of related packages</b></th></tr>
+    <tbody>
+    <tr>
+    <td valign="top">
+    <br>
+    <b>from customer's system:</b> <br> 
+    <span id="dep_list_cust">list of packages - 1</span>
+    </td>
+    <td valign="top">
+    <input type="button" id="proceed_install_pkgs" value="Install Packages" style="visibility: hidden"/>
+    <br>
+    <b>to be installed:</b> <br> 
+    <div id="progress_with_pkgs_install" style="display: none;">
+    <img alt="Please wait" title="Please wait" src="progress.gif" />
+    </div>
+    <br>
+    <span id="dep_list_to_install"></span>
+    </td>
+    <td valign="top">
+    <input type="button" id="proceed_install_debuginfo" value="Install Debuginfo Packages" style="visibility: hidden"/>
+    <br>
+    <b>from test system:</b> <br>
+    <span id="dep_list_testsys"></span>
+    </td>
+    </tr>
+  </tbody>
+</table>
+
+<!--
+<br>
+<input type="button" id="proceed_pkgs_install" value="Proceed with installation of packages" style="visibility: hidden;" />
+<br>
+<input type="button" id="proceed_debuginfo_install" value="Proceed with installation of debug symbols" style="display: none;" />
+-->
+
+</form>
+<br>
+<a href="http://10.65.211.240/known_issues.txt">See known issues</a> in case of any problem or <a href="mailto:ashish.k.shah@gmail.com,divyaS15@gmail.com?subject=[acdc] - ">write</a> for any bugs or rfes 
+<br>
+<a href="http://10.65.211.240/TODO.txt">here</a> is to do list under consideration.
+
+<script type="text/javascript">
+
+var Host_IP;
+var Host_Passwd;
+
+document.Form1.Host_IP.focus();
+
+function Notify_Message(msg_str)
+{
+document.getElementById("NotifyMessage").innerHTML = msg_str;
+Notify_Message_Style("ALERT1");
+//setTimeout(function() { Notify_Message_Style("ALERT2"); }, 2000);
+setTimeout(function() { Notify_Message_Style("NORMAL"); }, 1000);
+}
+
+function Notify_Message_Style(msg_style_str)
+{
+if(msg_style_str == "ALERT1")
+{
+document.getElementById("NotifyMessage").style.backgroundColor = "#FF9900";
+//document.getElementById("NotifyMessage").style.border = "thick ridge #FF9900";
+document.getElementById("NotifyMessage").style.fontSize="xx-large";
+document.getElementById("NotifyMessage").style.boxShadow = "10px 20px 30px #FF9900";
+}
+/*
+else if(msg_style_str == "ALERT2")
+{
+//document.getElementById("NotifyMessage").style.backgroundColor = "#FF9900";
+//document.getElementById("NotifyMessage").style.border = "thick ridge #FF9900";
+document.getElementById("NotifyMessage").style.fontSize="medium";
+//document.getElementById("NotifyMessage").style.boxShadow = "10px 20px 30px #FF9900";
+}
+*/
+else
+{
+document.getElementById("NotifyMessage").style.backgroundColor = "#FFDAB9";
+//document.getElementById("NotifyMessage").style.border = "thin solid #FFDAB9";
+document.getElementById("NotifyMessage").style.fontSize="medium";
+document.getElementById("NotifyMessage").style.boxShadow = "none";
+}
+return 0;
+}
+
+function ValidateIPaddress()
+{
+ if (document.Form1.Host_IP.value.length==0)
+{
+document.getElementById("ipStatus").style.color="black";
+document.getElementById("ipStatus").innerHTML = "Please enter valid IP address";
+document.Form1.Host_Submit.disabled = true;
+return (false);
+}
+
+ if (/^127/.test(document.Form1.Host_IP.value))
+{
+document.getElementById("ipStatus").style.color="red";
+document.getElementById("ipStatus").innerHTML = "Invalid IP address!";
+document.Form1.Host_Submit.disabled = true;
+return (false);
+}
+
+ if (/^0|00|000/.test(document.Form1.Host_IP.value))
+{
+document.getElementById("ipStatus").style.color="red";
+document.getElementById("ipStatus").innerHTML = "Invalid IP address!";
+document.Form1.Host_Submit.disabled = true;
+return (false);
+}
+
+if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(document.Form1.Host_IP.value))
+  {
+    document.getElementById("ipStatus").style.color="green";
+    document.getElementById("ipStatus").innerHTML = "Valid IP address!";
+    if (document.getElementById("passwdStatus").style.color=="green")
+       {
+       document.Form1.Host_Submit.disabled = false;
+       return (true);
+       }
+   else
+   return (false);
+  }
+
+document.getElementById("ipStatus").style.color="red";
+document.getElementById("ipStatus").innerHTML = "Invalid IP address!";
+document.Form1.Host_Submit.disabled = true;
+return (false);
+}
+
+
+function ValidatePasswd(key)
+{
+ if (document.Form1.Host_Passwd.value.length==0)
+{
+document.getElementById("passwdStatus").style.color="black";
+document.getElementById("passwdStatus").innerHTML = "Enter root password";
+document.Form1.Host_Submit.disabled = true;
+return (false);
+}
+else if ((document.Form1.Host_Passwd.value.indexOf(' ')>-1)|(document.Form1.Host_Passwd.value.indexOf('|')>-1)|(document.Form1.Host_Passwd.value.indexOf(';')>-1))
+{
+document.getElementById("passwdStatus").style.color="red";
+document.getElementById("passwdStatus").innerHTML = "' ', '|',';' not allowed in password";
+document.Form1.Host_Submit.disabled = true;
+return (false);
+}
+else
+{
+    document.getElementById("passwdStatus").style.color="green";
+    document.getElementById("passwdStatus").innerHTML = "Valid password!";
+}
+if (document.getElementById("ipStatus").style.color=="green")
+       {
+       document.Form1.Host_Submit.disabled = false;
+//       setTimeout(function(){document.Form1.Host_Submit.focus()},30);
+       return (true);
+       }
+    else
+return (false);
+}
+
+
+function Validate_core()
+{
+var numbers = /^[-+]?[0-9]+$/;
+var fs_path;
+if(numbers.test(document.Form2.sfdc_core.value))
+{
+if(document.Form2.core_Path[0].checked)
+{
+fs_path = document.Form2.core_Path[0].value + document.getElementById("sfdc_core").value + "/";
+document.Form2.core_Submit.disabled = false;
+//return;
+}
+else if(document.Form2.core_Path[1].checked)
+{
+fs_path = document.Form2.core_Path[1].value + document.getElementById("sfdc_core").value + "/";
+document.Form2.core_Submit.disabled = false;
+//return;
+//alert(fs_path);
+}
+}
+else 
+{
+document.Form2.core_Submit.disabled = true;
+return;
+}
+document.getElementById("core_file_path").innerHTML = fs_path;
+}
+
+
+function Validate_core_with_focus()
+{
+Validate_core();
+document.getElementById("core_Submit").focus();
+}
+
+
+function Validate_rpms_with_focus()
+{
+Validate_rpms();
+document.getElementById("rpms_Submit").focus();
+}
+
+function Validate_rpms()
+{
+var numbers = /^[-+]?[0-9]+$/;
+var fs_path;
+if(numbers.test(document.Form2.sfdc_rpms.value))
+{
+if(document.Form2.rpms_Path[0].checked)
+{
+fs_path = document.Form2.rpms_Path[0].value + document.getElementById("sfdc_rpms").value + "/";
+document.Form2.rpms_Submit.disabled = false;
+}
+else if(document.Form2.rpms_Path[1].checked)
+{
+fs_path = document.Form2.rpms_Path[1].value + document.getElementById("sfdc_rpms").value + "/";
+document.Form2.rpms_Submit.disabled = false;
+//alert(fs_path);
+}
+}
+else
+{
+document.Form2.rpms_Submit.disabled = true;
+return;
+}
+document.getElementById("rpms_file_path").innerHTML = fs_path;
+}
+
+
+
+function showHide(shID) {
+	if (document.getElementById(shID)) {
+		if (document.getElementById(shID+'-show').style.display != 'none') {
+			document.getElementById(shID+'-show').style.display = 'none';
+			document.getElementById(shID).style.display = 'block';
+		}
+		else {
+			document.getElementById(shID+'-show').style.display = 'inline';
+			document.getElementById(shID).style.display = 'none';
+		}
+	}
+}
+
+<!--
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
+}
+-->
+
+function proceed_anyway_clicked() {
+var proceed = document.getElementById("proceed_anyway").checked;
+if(proceed)
+{
+document.Form2.proceed_pkgs_install.disabled = false;
+
+}
+else { document.Form2.proceed_pkgs_install.disabled = true; }
+
+}
+
+</script> 
+
+
+<script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="js/select_core.js"></script>
+<script type="text/javascript" src="js/select_core_radio.js"></script>
+<script type="text/javascript" src="js/select_rpms.js"></script>
+<script type="text/javascript" src="js/select_rpms_radio.js"></script>
+<script type="text/javascript" src="js/proceed.js"></script>
+<script type="text/javascript" src="js/proceed_install_pkgs.js"></script>
+<script type="text/javascript" src="js/proceed_install_debuginfo.js"></script>
+<script type="text/javascript" src="js/test.js"></script>
+
+</BODY>
+
+</HTML>

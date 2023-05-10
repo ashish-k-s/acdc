@@ -1,0 +1,20 @@
+1) installed-rpms from sosreport is shown as invalid file
+installed-rpms in root directory of extracted sos is symlink, select actual
+file under sos_commands/rpm/ directory as workaround.
+The bug is under consideration
+
+2) Not accepting "%" in name of core or rpms directory path or file.
+todo: "%" needs to be replaced with "%25" in web url, this can be considered
+in future.
+For now workaround is to rename file and make sure it does not have "%" symbol
+anywhere in name or path.
+
+3) Garbage text is seen while Install Packages step is about to finish
+
+4) Install Packages and Install Debuginfo Packages buttons are enabled before
+the earlier process being run is finished.
+
+5) The tool fails silently without any error in case of problem installing any pacakge.
+The tool uses yum to install required package. you does not provide any error code in return for package installation failure.
+Hence its not possible to track this error. Make sure test system in question is registered and also subscribed to required child channels and debuginfo channels.
+ 
